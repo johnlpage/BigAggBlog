@@ -111,7 +111,7 @@ void configure_sharding() {
 	collection = mongoc_client_get_collection(conn, "admin", "test");
 
 	//Work out if we arer talking to a mongod or a mongos
-	command = BCON_NEW("collMod", BCON_UTF8(NAMESPACE),"noPadding",BCON_BOOL(false));
+	command = BCON_NEW("collMod", BCON_UTF8(NAMESPACE),"noPadding",BCON_BOOL(getenv("PACKTIGHT")?true:false));
 	if (mongoc_collection_command_simple(collection, command, NULL, &reply,
 			&error)) {
 
