@@ -1,0 +1,58 @@
+
+#Check Database stats
+mongo
+MongoDB shell version: 3.0.4
+connecting to: test
+> use vosa
+> db.mot_results.stats(1024*1024)
+{
+        "ns" : "vosa.mot_results",
+        "count" : 539420028,
+        "size" : 123463,
+        "avgObjSize" : 239,
+        "numExtents" : 85,
+        "storageSize" : 131694,
+        "lastExtentSize" : 2046.992172241211,
+        "paddingFactor" : 1,
+        "paddingFactorNote" : "paddingFactor is unused and unmaintained in 3.0. It remains hard coded to 1.0 for compatibility only.",
+        "userFlags" : 1,
+        "capped" : false,
+        "nindexes" : 1,
+        "totalIndexSize" : 25886,
+        "indexSizes" : {
+                "_id_" : 25886
+        },
+        "ok" : 1
+}
+
+25 GB ID Index?
+123GB of data
+131GB of Storage
+
+export PACKTIGHT=true
+
+-------------
+
+Setup Best
+
+pkill mongod
+pkill mongos
+
+rm -rf /data/shards
+mkdir /data/shards
+mkdir /data/logs
+
+ulimit -H -n 63363
+ulimit -n 65535fig
+
+mkdir -p /data/shards/config
+
+
+mongod --configsvr --dbpath=/data/shards/config --logpath=/data/logs/configsvr.log --fork
+
+mongos --configdb localhost:27019 --logpath=/data/logs/mongos.log --fork
+
+
+
+
+

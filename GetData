@@ -1,0 +1,16 @@
+
+#Get data files from data.gov.uk
+cd /data
+mkdir raw
+cd raw
+curl -O http://data.dft.gov.uk/anonymised-mot-test/12-03/test_result_[2005-2013].txt.gz
+for f in test_result*.gz
+do
+  gunzip $f
+done
+wait
+
+#Now we have 28GB of Tab separated records
+#Count the  Rows
+cat * | wc -l
+# 290,325,473 Rows 

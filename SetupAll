@@ -1,0 +1,101 @@
+#Format and Mount the EBS Drive - not quickformat
+cd
+sudo pkill mongod
+sudo kill mongos
+sudo umount /dev/xvdb
+sudo mkfs.ext4 -E lazy_itable_init=0,lazy_journal_init=0  /dev/xvdb
+sudo mkdir /data
+sudo mount /dev/xvdb /data
+
+
+#OS Tuning as per production notes
+
+sudo blockdev --setra 32 /dev/xvdb
+echo never | sudo tee  /sys/kernel/mm/transparent_hugepage/enabled
+echo never | sudo tee  /sys/kernel/mm/transparent_hugepage/defrag
+
+sudo yum install -y sysstat
+
+#Install MongoDB 3.0 from Repository
+
+echo "[mongodb-org-3.0]" | sudo tee /etc/yum.repos.d/mongodb-org-3.0.repo
+echo "name=MongoDB Repository"  | sudo tee --append /etc/yum.repos.d/mongodb-org-3.0.repo
+echo "baseurl=https://repo.mongodb.org/yum/amazon/2013.03/mongodb-org/3.0/x86_64/" | sudo tee --append  /etc/yum.repos.d/mongodb-org-3.0.repo
+echo "gpgcheck=0" | sudo tee --append  /etc/yum.repos.d/mongodb-org-3.0.repo
+echo "enabled=1" | sudo tee --append  /etc/yum.repos.d/mongodb-org-3.0.repo
+
+sudo yum install -y mongodb-org
+
+sudo chown ec2-user /data
+mkdir /data/db
+mkdir /data/logs
+
+#Verify and set up simple server
+
+ulimit -H -n 65535
+ulimit -n 65535
+pkill mongod
+sleep 1
+
+mongod --storageEngine=wiredTiger --dbpath=/data/db --logpath=/data/logs/mongod.log --fork
+echo 'db.serverStatus().version' | mongo --quiet
+
+#Install Developer tools
+sudo yum groupinstall -y 'Development tools'
+
+#Build MongoDB C driver
+
+cd
+git clone https://github.com/mongodb/mongo-c-driver.git
+cd mongo-c-driver
+./autogen.sh
+make/Users/jlp
+sudo make install
+
+
+#Clone Repo for the Blog
+cd
+git clone http://github.com/johnlpage/BigAggBlog
+cd BigAggBlog
+make
+
+
+#Get data files from data.gov.uk
+cd /data
+mkdir raw
+cd raw
+curl -O http://data.dft.gov.uk/anonymised-mot-test/12-03/test_result_[2005-2013].txt.gz
+for f in test_result*.gz
+do
+  gunzip $f
+done
+wait
+
+#Now we have 28GB of Tab separated records
+#Count the  Rows
+cat * | wc -l
+# 290,325,473 Rows 
+
+#Whilst that is running time the disk linear read speed
+#isostat -k 10
+
+#avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           0.00    0.00    0.31   48.46    0.89   50.34
+
+#Device:            tps    kB_read/s    kB_wrtn/s    kB_read    kB_wrtn
+#xvda              0.00         0.00         0.00          0          0
+#xvdb           1829.50     58540.80         0.40     585408          4
+
+
+#Approx 60 MB/s - high IO wait so IO is the limit.
+
+#Load data in three times
+screen
+cd /data/raw
+export LD_LIBRARY_PATH=/usr/local/lib
+#Load three copies
+for f in *.txt; do ~/BigAggBlog/fastload $f; done
+for f in *.txt; do ~/BigAggBlog/fastload $f; done
+for f in *.txt; do ~/BigAggBlog/fastload $f; done
+
+
