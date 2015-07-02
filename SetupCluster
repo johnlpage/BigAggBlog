@@ -15,8 +15,8 @@ mkdir /data/logs
 
 mongod --configsvr --dbpath /data/config --logpath /data/logs/config.log --fork
 
-
-ENGINEOPTS="--storageEngine=wiredTiger --wiredTigerCollectionBlockCompressor=zlib --wiredTigerCacheSizeGB=1"
+#nojournal with wiredTiger is OK in some cases - with mmap NO!
+ENGINEOPTS="--storageEngine=wiredTiger --nojournal --wiredTigerCollectionBlockCompressor=zlib --wiredTigerCacheSizeGB=1"
 sleep 2
 mongos --configdb localhost:27019 --logpath /data/logs/mongos.log --fork
 
