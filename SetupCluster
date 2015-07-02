@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #SetupMongo
 
 pkill mongos
@@ -9,20 +11,21 @@ ulimit -H -n 65535
 
 /bin/rm -rf /data/config
 mkdir /data/config
-mongod --configsvr --dbpath /data/config --logpath /data/config.log --fork
+mkdir /data/logs
 
-mongos --configdb localhost:27019 --logpath /data/mongos.log --fork
+mongod --configsvr --dbpath /data/config --logpath /data/logs/config.log --fork
+
 
 ENGINEOPTS="--storageEngine=wiredTiger --wiredTigerCollectionBlockCompressor=zlib --wiredTigerCacheSizeGB=1"
 sleep 2
-mongos --configdb localhost:27019 --logpath /data/mongos.log --fork
+mongos --configdb localhost:27019 --logpath /data/logs/mongos.log --fork
 
 
 for s in 01 02 03 04 05 06 07 08 09 10 11 12
 do
 /bin/rm -rf /data/shard-270$s
 mkdir /data/shard-270$s
-mongod --port 270$s --dbpath /data/shard-270$s --logpath=/data/mongod-270$s.log $ENGINEOPTS --fork
+mongod --port 270$s --dbpath /data/shard-270$s --logpath=/data/logs/mongod-270$s.log $ENGINEOPTS --fork
 echo "sh.addShard('localhost:270$s')" | mongo
 done
 
