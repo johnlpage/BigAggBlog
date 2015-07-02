@@ -1,6 +1,6 @@
-
+#!/bin/bash
 #Load data in three times
-screen
+
 cd /data/raw
 export LD_LIBRARY_PATH=/usr/local/lib
 #Load three copies
